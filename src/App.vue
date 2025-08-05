@@ -1,6 +1,10 @@
 <template>
   <div>
-    <h1>Halo, {{ keycloak?.tokenParsed?.preferred_username }}</h1>
+    <h1>
+      Halo, {{ keycloak?.tokenParsed?.preferred_username }} -
+      {{ keycloak?.tokenParsed?.given_name }} -
+      {{ keycloak?.tokenParsed?.email }}
+    </h1>
 
     <button @click="logout">Logout</button>
   </div>
