@@ -6,16 +6,22 @@
       {{ keycloak?.tokenParsed?.email }}
     </h1>
 
-    <button @click="logout">Logout</button>
+    <button v-if="!isAuthenticated" @click="handleLogin">Login</button>
+    <button v-else @click="handleLogout">Logout</button>
   </div>
 </template>
 
 <script setup>
-import { keycloak } from "./keycloak";
+import { ref } from "vue";
+import { keycloak, login, logout } from "./keycloak";
 
-const logout = () => {
-  keycloak.logout({
-    redirectUri: window.location.origin,
-  });
+const isAuthenticated = ref(keycloak.authenticated);
+
+const handleLogin = () => {
+  login();
+};
+
+const handleLogout = () => {
+  logout();
 };
 </script>

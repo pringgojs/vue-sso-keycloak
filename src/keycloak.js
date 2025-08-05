@@ -6,11 +6,6 @@ const keycloak = new Keycloak({
   clientId: "vue-sso-app",
 });
 
-/**
- * Inisialisasi Keycloak
- * - Menyimpan token & refreshToken di localStorage
- * - Mengambil token dari localStorage saat reload
- */
 const initKeycloak = () =>
   new Promise((resolve, reject) => {
     const storedToken = localStorage.getItem("kc_token");
@@ -18,53 +13,49 @@ const initKeycloak = () =>
 
     keycloak
       .init({
-        onLoad: "login-required", // Bisa diganti 'check-sso' jika ingin silent login
+        onLoad: "check-sso", // hanya cek, tidak auto login
         pkceMethod: "S256",
         flow: "standard",
         token: storedToken,
         refreshToken: storedRefreshToken,
-        checkLoginIframe: false, // hindari iframe issue
+        checkLoginIframe: false,
+        silentCheckSsoRedirectUri:
+          window.location.origin + "/silent-check-sso.html", // Wajib jika pakai check-sso
       })
       .then((authenticated) => {
-        if (!authenticated) {
-          window.location.reload();
-        } else {
+        if (authenticated) {
           // Simpan token
           localStorage.setItem("kc_token", keycloak.token);
           localStorage.setItem("kc_refresh_token", keycloak.refreshToken);
-
-          // Setup auto refresh
           setupTokenRefresh();
-          resolve(keycloak);
         }
+        resolve(keycloak);
       })
-      .catch((err) => {
-        console.error("Keycloak init failed", err);
-        reject(err);
-      });
+      .catch(reject);
   });
 
-/**
- * Auto-refresh token secara periodik
- */
 function setupTokenRefresh() {
   setInterval(() => {
     keycloak
-      .updateToken(60) // refresh jika < 60 detik expired
+      .updateToken(60)
       .then((refreshed) => {
         if (refreshed) {
-          console.log("Token refreshed");
           localStorage.setItem("kc_token", keycloak.token);
           localStorage.setItem("kc_refresh_token", keycloak.refreshToken);
-        } else {
-          console.log("Token masih valid");
         }
       })
       .catch(() => {
-        console.error("Token refresh gagal, logout...");
         keycloak.logout({ redirectUri: window.location.origin });
       });
-  }, 30000); // check tiap 30 detik
+  }, 30000);
 }
 
-export { keycloak, initKeycloak };
+const login = () => {
+  keycloak.login({ redirectUri: window.location.origin });
+};
+
+const logout = () => {
+  keycloak.logout({ redirectUri: window.location.origin });
+};
+
+export { keycloak, initKeycloak, login, logout };
